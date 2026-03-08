@@ -1,0 +1,16 @@
+# WhatsApp Session (USIGUSE HAPA - Usalama wako)
+session/
+auth_info_multi/
+
+# Node Modules (Hizi zinapakuliwa na server yenyewe)
+node_modules/
+
+# Logs & Error files
+logs.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS specific files
+.DS_Store
+Thumbs.db

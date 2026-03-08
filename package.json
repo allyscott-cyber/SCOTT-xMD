@@ -1,0 +1,29 @@
+{
+  "name": "ally-scott-v11-alien-system",
+  "version": "11.0.0",
+  "description": "WhatsApp Bot with Dark Arsenal and Alien System Payloads",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "whatsapp-bot",
+    "baileys",
+    "ally-scott",
+    "alien-system",
+    "hacker-bot"
+  ],
+  "author": "Ally Scott",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
+    "@hapi/boom": "^10.0.1",
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "pino": "^8.16.1",
+    "qrcode-terminal": "^0.12.0",
+    "fs-extra": "^11.1.1",
+    "path": "^0.12.7"
+  }
+}

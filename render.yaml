@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ally-scott-v11
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
