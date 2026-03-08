@@ -1,6 +1,6 @@
 /**
  * ALLY SCOTT V11 - ALIEN SYSTEM
- * Optimized for Faster Pairing & Auto-Session Cleaning
+ * FIX: Couldn't Connect / Pairing Timeout
  */
 
 const baileys = require("@whiskeysockets/baileys");
@@ -16,20 +16,16 @@ const express = require('express');
 const path = require('path');
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
-const fs = require('fs-extra'); // Tumetumia fs-extra hapa kwa ajili ya kufuta folder kwa urahisi
+const fs = require('fs-extra');
 const app = express();
 
 const port = process.env.PORT || 10000;
 const ownerNumber = "255629308154@s.whatsapp.net";
 
-// --- AUTO-CLEAN SESSION LOGIC ---
-// Inafuta session ya zamani kila bot inapowaka upya ili kuzuia Pairing Error
+// Auto-Clean Session kila baada ya restart kuzuia cache mbovu
 if (fs.existsSync('./session')) {
-    console.log("🧹 Cleaning old session files...");
     fs.emptyDirSync('./session'); 
-    console.log("✅ Session cleared! Ready for fresh connection.");
 }
-// --------------------------------
 
 const store = (typeof makeInMemoryStore === 'function') 
     ? makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) 
@@ -45,31 +41,16 @@ async function startAllyScott() {
         version,
         logger: pino({ level: "silent" }),
         auth: state,
-        browser: ["Ubuntu", "Chrome", "20.0.04"], 
-        connectTimeoutMs: 90000, 
-        keepAliveIntervalMs: 30000, 
+        // BADILISHA HAPA: Safari inapita haraka zaidi kwenye pairing
+        browser: ["Mac OS", "Safari", "10.15.7"], 
+        connectTimeoutMs: 120000, 
+        defaultQueryTimeoutMs: 0,
+        keepAliveIntervalMs: 30000,
+        // HIZI NDIO LINE MUHIMU ZA KUTATUA 'COULDN'T CONNECT'
+        syncFullHistory: false, // Inazuia kupakua chat za zamani (Fast Link)
+        markOnlineOnConnect: true,
+        generateHighQualityLinkPreview: false,
         printQRInTerminal: false,
-        patchMessageBeforeSending: (message) => {
-            const requiresPatch = !!(
-                message.buttonsMessage ||
-                message.templateMessage ||
-                message.listMessage
-            );
-            if (requiresPatch) {
-                message = {
-                    viewOnceMessage: {
-                        message: {
-                            messageContextInfo: {
-                                deviceListMetadata: {},
-                                deviceListMetadataVersion: 2
-                            },
-                            ...message
-                        }
-                    }
-                };
-            }
-            return message;
-        }
     });
 
     store.bind(client.ev);
@@ -80,16 +61,13 @@ async function startAllyScott() {
         if (connection === 'close') {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
             if (reason !== DisconnectReason.loggedOut) {
-                console.log("🔄 Connection lost. Restarting in 5s...");
+                console.log("🔄 Connection lost. Restarting...");
                 setTimeout(() => startAllyScott(), 5000); 
             }
         } else if (connection === 'open') {
-            console.log('✅ ALLY SCOTT V11 CONNECTED SUCCESSFULLY!');
-            
-            try {
-                await client.newsletterFollow("https://whatsapp.com/channel/0029VbC3KUA5a23x1ndnfi2a"); 
-                await client.groupAcceptInvite("Bffi10i0w013Pa7A5z7UxP"); 
-            } catch (e) { console.log("Auto-join error:", e); }
+            console.log('✅ ALLY SCOTT V11 CONNECTED!');
+            // Tuma ujumbe kwako kuthibitisha
+            await client.sendMessage(ownerNumber, { text: "🚀 *ALLY SCOTT V11 CONNECTED SUCCESSFULLY!*" });
         }
     });
 
@@ -100,22 +78,11 @@ async function startAllyScott() {
             delete require.cache[require.resolve("./message")];
             const messageHandler = require("./message");
             await messageHandler(client, m); 
-        } catch (err) {
-            console.error("Error in index.js handler:", err);
-        }
+        } catch (err) { }
     });
-
-    setInterval(async () => {
-        if (client.user) {
-            const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Nairobi' });
-            const bio = `ALLY SCOTT V11 ⚡ Online: ${time} | Alien System 👽`;
-            try {
-                await client.updateProfileStatus(bio);
-            } catch (e) { }
-        }
-    }, 60000);
 }
 
+// API YA PAIRING - ILIBORESHWA
 app.get('/api/get-code', async (req, res) => {
     let num = req.query.number;
     if (!num) return res.status(400).json({ error: "Weka namba!" });
@@ -128,12 +95,13 @@ app.get('/api/get-code', async (req, res) => {
             version,
             logger: pino({ level: "silent" }),
             auth: state,
-            browser: ["Ubuntu", "Chrome", "20.0.04"],
-            connectTimeoutMs: 90000
+            browser: ["Mac OS", "Safari", "10.15.7"],
+            connectTimeoutMs: 120000,
+            syncFullHistory: false, // Lazima iwe false hapa pia
         });
         
         tempClient.ev.on('creds.update', saveCreds);
-        await delay(5000); 
+        await delay(5000); // Subiri server itulie
         
         if (!tempClient.authState.creds.registered) {
             let code = await tempClient.requestPairingCode(num);
