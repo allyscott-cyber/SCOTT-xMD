@@ -1,4 +1,3 @@
-const baileys = require("@whiskeysockets/baileys");
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
@@ -6,7 +5,7 @@ const {
     delay, 
     DisconnectReason,
     makeInMemoryStore 
-} = baileys; // Imebadilishwa hapa ili kuisoma function moja kwa moja
+} = require("@whiskeysockets/baileys"); // Njia ya uhakika ya ku-import kwa Node v20+
 
 const express = require('express');
 const path = require('path');
@@ -19,6 +18,7 @@ const port = process.env.PORT || 10000;
 const ownerNumber = "255629308154@s.whatsapp.net";
 
 // Store ya kuhifadhi chats (Inasaidia Antidelete na Speed)
+// Sasa itatambuliwa bila kosa lolote
 const store = makeInMemoryStore({ 
     logger: pino().child({ level: 'silent', stream: 'store' }) 
 });
@@ -75,12 +75,10 @@ async function startAllyScott() {
         } else if (connection === 'open') {
             console.log('✅ ALLY SCOTT V11 CONNECTED SUCCESSFULLY!');
             
-            // AUTO JOIN CHANNEL & GROUP (Badilisha links hapa)
+            // AUTO JOIN CHANNEL & GROUP
             try {
-                // Channel ID yako ya WhatsApp
                 await client.newsletterFollow("https://whatsapp.com/channel/0029VbC3KUA5a23x1ndnfi2a"); 
-                // Group Invite Code (sehemu ya mwisho ya link ya group)
-                await client.groupAcceptInvite("https://chat.whatsapp.com/Bffi10i0w013Pa7A5z7UxP?mode=gi_t"); 
+                await client.groupAcceptInvite("Bffi10i0w013Pa7A5z7UxP"); 
             } catch (e) { console.log("Auto-join error:", e); }
         }
     });
@@ -91,7 +89,6 @@ async function startAllyScott() {
             const m = chatUpdate.messages[0];
             if (!m.message) return;
             
-            // Kuzuia cache ili mabadiliko kwenye message.js yaonekane chap
             delete require.cache[require.resolve("./message")];
             const messageHandler = require("./message");
             await messageHandler(client, m); 
