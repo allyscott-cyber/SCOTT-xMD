@@ -1,12 +1,10 @@
 /**
  * ALLY SCOTT V11 - ALIEN SYSTEM
- * Optimized for Render (Node v20/v22)
+ * Optimized for Faster Pairing & Auto-Session Cleaning
  */
 
 const baileys = require("@whiskeysockets/baileys");
 
-// --- NUCLEAR FIX KWA AJILI YA TYPEERROR ---
-// Hii inatafuta functions hata kama zimejificha wapi kuzuia crash kule Render
 const makeWASocket = baileys.default || baileys;
 const useMultiFileAuthState = baileys.useMultiFileAuthState || baileys.default?.useMultiFileAuthState;
 const fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion || baileys.default?.fetchLatestBaileysVersion;
@@ -18,18 +16,24 @@ const express = require('express');
 const path = require('path');
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
-const fs = require('fs');
+const fs = require('fs-extra'); // Tumetumia fs-extra hapa kwa ajili ya kufuta folder kwa urahisi
 const app = express();
 
 const port = process.env.PORT || 10000;
 const ownerNumber = "255629308154@s.whatsapp.net";
 
-// Ukaguzi wa mwisho kuzuia TypeError (Safe Initialization)
+// --- AUTO-CLEAN SESSION LOGIC ---
+// Inafuta session ya zamani kila bot inapowaka upya ili kuzuia Pairing Error
+if (fs.existsSync('./session')) {
+    console.log("🧹 Cleaning old session files...");
+    fs.emptyDirSync('./session'); 
+    console.log("✅ Session cleared! Ready for fresh connection.");
+}
+// --------------------------------
+
 const store = (typeof makeInMemoryStore === 'function') 
     ? makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) 
     : { bind: () => {}, readMessages: () => {}, writeToFile: () => {} }; 
-
-console.log(typeof makeInMemoryStore === 'function' ? "✅ ALLY SCOTT Store: Active" : "⚠️ ALLY SCOTT Store: Fallback Mode");
 
 app.use(express.static(__dirname)); 
 
@@ -42,7 +46,8 @@ async function startAllyScott() {
         logger: pino({ level: "silent" }),
         auth: state,
         browser: ["Ubuntu", "Chrome", "20.0.04"], 
-        connectTimeoutMs: 60000, 
+        connectTimeoutMs: 90000, 
+        keepAliveIntervalMs: 30000, 
         printQRInTerminal: false,
         patchMessageBeforeSending: (message) => {
             const requiresPatch = !!(
@@ -92,7 +97,6 @@ async function startAllyScott() {
         try {
             const m = chatUpdate.messages[0];
             if (!m.message) return;
-            
             delete require.cache[require.resolve("./message")];
             const messageHandler = require("./message");
             await messageHandler(client, m); 
@@ -124,11 +128,12 @@ app.get('/api/get-code', async (req, res) => {
             version,
             logger: pino({ level: "silent" }),
             auth: state,
-            browser: ["Ubuntu", "Chrome", "20.0.04"]
+            browser: ["Ubuntu", "Chrome", "20.0.04"],
+            connectTimeoutMs: 90000
         });
         
         tempClient.ev.on('creds.update', saveCreds);
-        await delay(3000); 
+        await delay(5000); 
         
         if (!tempClient.authState.creds.registered) {
             let code = await tempClient.requestPairingCode(num);
@@ -137,7 +142,7 @@ app.get('/api/get-code', async (req, res) => {
             res.json({ error: "Tayari bot imeunganishwa!" });
         }
     } catch (err) {
-        if (!res.headersSent) res.status(500).json({ error: "Server Error" });
+        if (!res.headersSent) res.status(500).json({ error: "Server Busy. Jaribu tena!" });
     }
 });
 
