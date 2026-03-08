@@ -3,6 +3,9 @@
   "version": "11.0.0",
   "description": "WhatsApp Bot with Dark Arsenal and Alien System Payloads",
   "main": "index.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -24,6 +27,7 @@
     "pino": "^8.16.1",
     "qrcode-terminal": "^0.12.0",
     "fs-extra": "^11.1.1",
-    "file-type": "^16.5.4"
+    "file-type": "^16.5.4",
+    "path": "^0.12.7"
   }
 }
