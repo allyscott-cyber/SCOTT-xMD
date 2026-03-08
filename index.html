@@ -129,6 +129,8 @@
             margin-top: 10px;
             border-radius: 5px;
             font-family: 'Rajdhani', sans-serif;
+            border: none;
+            cursor: pointer;
         }
 
         .copy-btn:active {
@@ -140,7 +142,6 @@
             margin-top: 15px;
         }
 
-        /* Animation ya mzunguko wa kupakia */
         .spinner {
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-left-color: var(--primary);
@@ -189,24 +190,25 @@
 
 <script>
     async function getCode() {
-        const num = document.getElementById('number').value;
+        const numInput = document.getElementById('number');
+        const num = numInput.value.replace(/[^0-9]/g, '');
         const loading = document.getElementById('loading');
         const resultContainer = document.getElementById('result-container');
         const codeDiv = document.getElementById('pairing-code');
         const mainBtn = document.getElementById('main-btn');
 
         if (!num || num.length < 10) {
-            alert("⚠️ Tafadhali weka namba ya simu iliyokamilika!");
+            alert("⚠️ Tafadhali weka namba ya simu iliyokamilika (Mfano: 255...)!");
             return;
         }
 
-        // Ficha vitu vya zamani
         mainBtn.disabled = true;
         mainBtn.style.opacity = "0.5";
         loading.style.display = 'block';
         resultContainer.style.display = 'none';
 
         try {
+            // Tumeongeza delay ya 5s kwenye fetch ili server itulie
             const response = await fetch(`/api/get-code?number=${num}`);
             const data = await response.json();
 
@@ -217,6 +219,8 @@
             if (data.code) {
                 resultContainer.style.display = 'block';
                 codeDiv.innerText = data.code;
+                // Auto-copy kwa urahisi
+                navigator.clipboard.writeText(data.code);
             } else if (data.error) {
                 alert("❌ Error: " + data.error);
             }
@@ -224,7 +228,7 @@
             loading.style.display = 'none';
             mainBtn.disabled = false;
             mainBtn.style.opacity = "1";
-            alert("⚠️ Server imeshindwa kujibu. Hakikisha bot yako ya Render iko Online.");
+            alert("⚠️ Server Busy! Jaribu tena baada ya sekunde chache.");
         }
     }
 
