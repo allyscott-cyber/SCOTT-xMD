@@ -6,7 +6,7 @@ const {
     delay, 
     DisconnectReason,
     makeInMemoryStore 
-} = baileys.default || baileys;
+} = baileys; // Imebadilishwa hapa ili kuisoma function moja kwa moja
 
 const express = require('express');
 const path = require('path');
