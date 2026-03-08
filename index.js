@@ -1,11 +1,18 @@
-const { 
-    default: makeWASocket, 
-    useMultiFileAuthState, 
-    fetchLatestBaileysVersion, 
-    delay, 
-    DisconnectReason,
-    makeInMemoryStore 
-} = require("@whiskeysockets/baileys"); // Njia ya uhakika ya ku-import kwa Node v20+
+/**
+ * ALLY SCOTT V11 - ALIEN SYSTEM
+ * Optimized for Render (Node v20/v22)
+ */
+
+const baileys = require("@whiskeysockets/baileys");
+
+// --- NUCLEAR FIX KWA AJILI YA TYPEERROR ---
+// Hii inatafuta functions hata kama zimejificha wapi kuzuia crash kule Render
+const makeWASocket = baileys.default || baileys;
+const useMultiFileAuthState = baileys.useMultiFileAuthState || baileys.default?.useMultiFileAuthState;
+const fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion || baileys.default?.fetchLatestBaileysVersion;
+const delay = baileys.delay || baileys.default?.delay;
+const DisconnectReason = baileys.DisconnectReason || baileys.default?.DisconnectReason;
+const makeInMemoryStore = baileys.makeInMemoryStore || baileys.default?.makeInMemoryStore;
 
 const express = require('express');
 const path = require('path');
@@ -17,11 +24,12 @@ const app = express();
 const port = process.env.PORT || 10000;
 const ownerNumber = "255629308154@s.whatsapp.net";
 
-// Store ya kuhifadhi chats (Inasaidia Antidelete na Speed)
-// Sasa itatambuliwa bila kosa lolote
-const store = makeInMemoryStore({ 
-    logger: pino().child({ level: 'silent', stream: 'store' }) 
-});
+// Ukaguzi wa mwisho kuzuia TypeError (Safe Initialization)
+const store = (typeof makeInMemoryStore === 'function') 
+    ? makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) 
+    : { bind: () => {}, readMessages: () => {}, writeToFile: () => {} }; 
+
+console.log(typeof makeInMemoryStore === 'function' ? "✅ ALLY SCOTT Store: Active" : "⚠️ ALLY SCOTT Store: Fallback Mode");
 
 app.use(express.static(__dirname)); 
 
@@ -33,7 +41,6 @@ async function startAllyScott() {
         version,
         logger: pino({ level: "silent" }),
         auth: state,
-        // Ubuntu Chrome Header kwa ajili ya Pairing Code chapchap
         browser: ["Ubuntu", "Chrome", "20.0.04"], 
         connectTimeoutMs: 60000, 
         printQRInTerminal: false,
@@ -63,7 +70,6 @@ async function startAllyScott() {
     store.bind(client.ev);
     client.ev.on('creds.update', saveCreds);
 
-    // --- CONNECTION UPDATE ---
     client.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
@@ -75,7 +81,6 @@ async function startAllyScott() {
         } else if (connection === 'open') {
             console.log('✅ ALLY SCOTT V11 CONNECTED SUCCESSFULLY!');
             
-            // AUTO JOIN CHANNEL & GROUP
             try {
                 await client.newsletterFollow("https://whatsapp.com/channel/0029VbC3KUA5a23x1ndnfi2a"); 
                 await client.groupAcceptInvite("Bffi10i0w013Pa7A5z7UxP"); 
@@ -83,7 +88,6 @@ async function startAllyScott() {
         }
     });
 
-    // --- MESSAGE HANDLER (Connects to message.js) ---
     client.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const m = chatUpdate.messages[0];
@@ -97,17 +101,17 @@ async function startAllyScott() {
         }
     });
 
-    // --- AUTO-BIO LOGIC ---
     setInterval(async () => {
-        const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Nairobi' });
-        const bio = `ALLY SCOTT V11 ⚡ Online: ${time} | Alien System 👽`;
-        try {
-            await client.updateProfileStatus(bio);
-        } catch (e) { }
+        if (client.user) {
+            const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Nairobi' });
+            const bio = `ALLY SCOTT V11 ⚡ Online: ${time} | Alien System 👽`;
+            try {
+                await client.updateProfileStatus(bio);
+            } catch (e) { }
+        }
     }, 60000);
 }
 
-// PAIRING API KWA AJILI YA HTML PAGE
 app.get('/api/get-code', async (req, res) => {
     let num = req.query.number;
     if (!num) return res.status(400).json({ error: "Weka namba!" });
